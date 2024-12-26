@@ -1,3 +1,5 @@
+import os
+os.system('pip install requests')
 import streamlit as st
 import requests
 from textblob import TextBlob
