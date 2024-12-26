@@ -1,6 +1,6 @@
 setuptools
+requests
 streamlit
 beautifulsoup4
-requests
 textblob
 matplotlib
