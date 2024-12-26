@@ -1,6 +1,6 @@
 setuptools
 streamlit
-beautifulsoup4==4.10.0
-requests==2.26.0
-textblob==0.15.3
-matplotlib==3.5.1
+beautifulsoup4
+requests
+textblob
+matplotlib
