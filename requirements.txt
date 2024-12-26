@@ -1,8 +1,6 @@
-Flask==2.2.2
-Werkzeug==2.2.3
+streamlit
 beautifulsoup4==4.10.0
 requests==2.26.0
 textblob==0.15.3
 matplotlib==3.5.1
-scraper==0.1.0
 numpy==1.23.5
