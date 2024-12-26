@@ -12,7 +12,7 @@ nltk.download('vader_lexicon')
 
 # Function to run the TikTok scraper program
 def run_tiktok_scraper(url, output_file, file_type):
-    command = f"python tt-dumper.py -u {url} -o {output_file} -f {file_type}"
+    command = f"python scrapper.py -u {url} -o {output_file} -f {file_type}"
     process = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if process.returncode != 0:
         raise Exception(f"Error running scraper: {process.stderr.decode('utf-8')}")
