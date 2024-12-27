@@ -100,7 +100,7 @@ def analyze_sentiment(comment):
 st.title("TikTok Comment Sentiment Analysis")
 
 # Input TikTok video URL
-video_url = st.text_input("Enter TikTok Video URL:")
+video_url = st.text_input("Enter TikTok Video URL:            Example : https://www.tiktok.com/username/video/7452354083213775")
 
 if st.button("Analyze Sentiments"):
     if not video_url:
