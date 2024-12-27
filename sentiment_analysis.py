@@ -1,7 +1,4 @@
-import os
-os.system('pip install requests')
 import streamlit as st
-import requests
 from textblob import TextBlob
 import json
 import os
@@ -9,16 +6,54 @@ import subprocess
 import matplotlib.pyplot as plt
 from nltk.sentiment import SentimentIntensityAnalyzer
 import nltk
+from langdetect import detect
+import re
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
 
-# Pastikan VADER tersedia di NLTK
+# Unduh resource NLTK yang diperlukan
+nltk.download('punkt')
+nltk.download('stopwords')
 nltk.download('vader_lexicon')
 
+# Function to load JSON data
+def load_json(file_path):
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data
+    except Exception as e:
+        st.error(f"Error loading JSON file: {e}")
+        return None
+
 # Function to run the TikTok scraper program
-def run_tiktok_scraper(url, output_file, file_type):
-    command = f"python scrapper.py -u {url} -o {output_file} -f {file_type}"
+def run_tiktok_scraper(url, output_file, file_type="json"):
+    """
+    Run the TikTok scraper and save the output to a specified file.
+    """
+    command = f"python tt-dumper.py -u {url} -o {output_file} -f {file_type}"
     process = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if process.returncode != 0:
         raise Exception(f"Error running scraper: {process.stderr.decode('utf-8')}")
+
+# Function to detect language and preprocess comment
+def preprocess_comment_with_language_detection(comment):
+    # Detect language
+    lang = detect(comment)
+    
+    # Load the appropriate stopwords based on the detected language
+    try:
+        stop_words = stopwords.words(lang) if lang in stopwords.fileids() else stopwords.words('english')
+    except:
+        stop_words = stopwords.words('english')
+    
+    # Preprocess the comment
+    comment = comment.lower()  # Lowercase
+    comment = re.sub(r'[^a-zA-Z\s]', '', comment)  # Remove non-alphabetic characters
+    tokens = word_tokenize(comment)  # Tokenize
+    filtered_tokens = [word for word in tokens if word not in stop_words]  # Remove stopwords
+    
+    return filtered_tokens
 
 # Function to perform sentiment analysis
 def analyze_sentiment(comment):
@@ -60,22 +95,11 @@ def analyze_sentiment(comment):
         "intensity": intensity
     }
 
-# Function to load JSON data
-def load_json(file_path):
-    try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        return data
-    except Exception as e:
-        st.error(f"Error loading JSON file: {e}")
-        return None
-
 # Streamlit GUI
 st.title("TikTok Comment Sentiment Analysis")
 
 # Input TikTok video URL
 video_url = st.text_input("Enter TikTok Video URL:")
-st.write("Example : https://www.tiktok.com/username/video/7419678770166009094")
 
 if st.button("Analyze Sentiments"):
     if not video_url:
@@ -91,7 +115,7 @@ if st.button("Analyze Sentiments"):
             st.success("TikTok scraper completed successfully!")
 
             # Load JSON data
-            st.info("Loading data from output.json...")
+            st.info("Loading data from json...")
             data = load_json(output_file)
             if not data:
                 st.error("Failed to load data from output.json.")
@@ -131,6 +155,7 @@ if st.button("Analyze Sentiments"):
             st.pyplot(fig)
 
             # Cleanup
-            os.remove(output_file)
+            os.remove(output_file)  # Uncomment if you want to delete the file after use
+
         except Exception as e:
             st.error(f"An error occurred: {e}")
