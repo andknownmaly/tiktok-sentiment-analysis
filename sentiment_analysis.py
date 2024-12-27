@@ -1,7 +1,8 @@
+import os
+os.system('pip install requests')
 import streamlit as st
 from textblob import TextBlob
 import json
-import os
 import subprocess
 import matplotlib.pyplot as plt
 from nltk.sentiment import SentimentIntensityAnalyzer
