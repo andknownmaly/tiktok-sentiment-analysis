@@ -105,38 +105,45 @@ if st.button("Analyze Sentiments"):
             with open(output_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
 
-            # Display video metadata
-            st.subheader("Video Metadata")
-            metadata = data["metadata"]
-            st.write(f"**Video ID:** {metadata['idVideo']}")
-            st.write(f"**Username:** {metadata['uniqueId']} ({metadata['nickname']})")
-            st.write(f"**Description:** {metadata['description']}")
-            st.write(f"**Total Likes:** {metadata['totalLike']}")
-            st.write(f"**Total Comments:** {metadata['totalComment']}")
-            st.write(f"**Total Shares:** {metadata['totalShare']}")
-            st.write(f"**Created At:** {metadata['createTime']}")
-            st.write(f"**Duration:** {metadata['duration']} seconds")
+            
+            col1, col2 ,col3= st.columns(3)
+            with col1:
+                # Display video metadata
+                st.subheader("Video Metadata")
+                metadata = data["metadata"]
+                st.write(f"**Video ID:** {metadata['idVideo']}")
+                st.write(f"**Username:** {metadata['uniqueId']} ({metadata['nickname']})")
+                st.write(f"**Description:** {metadata['description']}")
+                st.write(f"**Total Likes:** {metadata['totalLike']}")
+                st.write(f"**Total Comments:** {metadata['totalComment']}")
+                st.write(f"**Total Shares:** {metadata['totalShare']}")
+                st.write(f"**Created At:** {metadata['createTime']}")
+                st.write(f"**Duration:** {metadata['duration']} seconds")
+            with col2:
+                #separator
+                st.subheader(" ")
+                st.write("->")
+            with col3:
+                # Perform sentiment analysis
+                st.subheader("Sentiment Analysis Results")
+                comments = data.get("comments", [])
+                sentiment_counts = {"Positive": 0, "Negative": 0, "Neutral": 0}
 
-            # Perform sentiment analysis
-            st.subheader("Sentiment Analysis Results")
-            comments = data.get("comments", [])
-            sentiment_counts = {"Positive": 0, "Negative": 0, "Neutral": 0}
+                for comment_data in comments:
+                    comment = comment_data["comment"]
+                    sentiment = analyze_sentiment(comment)
+                    sentiment_counts[sentiment["overall_sentiment"]] += 1
 
-            for comment_data in comments:
-                comment = comment_data["comment"]
-                sentiment = analyze_sentiment(comment)
-                sentiment_counts[sentiment["overall_sentiment"]] += 1
+                # Display sentiment analysis results as a bar chart
+                labels = list(sentiment_counts.keys())
+                values = list(sentiment_counts.values())
 
-            # Display sentiment analysis results as a bar chart
-            labels = list(sentiment_counts.keys())
-            values = list(sentiment_counts.values())
-
-            fig, ax = plt.subplots()
-            ax.bar(labels, values, color=["green", "red", "gray"])
-            ax.set_title("Sentiment Analysis of Comments")
-            ax.set_ylabel("Number of Comments")
-            ax.set_xlabel("Sentiment")
-            st.pyplot(fig)
+                fig, ax = plt.subplots()
+                ax.bar(labels, values, color=["green", "red", "gray"])
+                ax.set_title("Sentiment Analysis of Comments")
+                ax.set_ylabel("Number of Comments")
+                ax.set_xlabel("Sentiment")
+                st.pyplot(fig)
 
             # Cleanup
             os.remove(output_file)
