@@ -79,11 +79,11 @@ def analyze_sentiment(comment):
 
 # Streamlit GUI
 st.title("TikTok Comment Sentiment Analysis")
-
+st.set_page_config(page_title="TikTok Comment Sentiment Analysis", layout="wide", page_icon="favicon.ico")
 # Input TikTok video URL
-video_url = st.text_input("Enter TikTok Video URL: ")
-st.write("Example : https://www.tiktok.com/username/video/7452354083213775")
+st.write("Enter A Tiktok Video :")
 st.write("Copy it from url on Search bar...")
+video_url = st.text_input("Example : https://www.tiktok.com/username/video/7452354083213775")
 if st.button("Analyze Sentiments"):
     if not video_url:
         st.error("Please enter a TikTok video URL.")
