@@ -1,136 +1,206 @@
+import requests as REQUEST
+import json as JSON
+import argparse
+from time import sleep
+import datetime
+import time
+import csv
 import os
-os.system('pip install requests')
-import streamlit as st
-import requests
-from textblob import TextBlob
-import json
-import os
-import subprocess
-import matplotlib.pyplot as plt
-from nltk.sentiment import SentimentIntensityAnalyzer
-import nltk
+import re as RE
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# Pastikan VADER tersedia di NLTK
-nltk.download('vader_lexicon')
+# ASCII Art
+print(r'''
+  __  __         __                       
+ / /_/ /________/ /_ ____ _  ___  ___ ____
+/ __/ __/___/ _  / // /  ' \/ _ \/ -_) __/
+\__/\__/    \_,_/\_,_/_/_/_/ .__/\__/_/   
+                          /_/             
+                        
+                         @bud1mu
+''')
 
-# Function to run the TikTok scraper program
-def run_tiktok_scraper(url, output_file, file_type):
-    command = f"python scrapper.py -u {url} -o {output_file} -f {file_type}"
-    process = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if process.returncode != 0:
-        raise Exception(f"Error running scraper: {process.stderr.decode('utf-8')}")
+def convert(n):
+    return str(datetime.timedelta(seconds = n))
 
-# Function to perform sentiment analysis
-def analyze_sentiment(comment):
-    """
-    Analyze the sentiment of a given comment using TextBlob and VADER.
+# PARSING ARGUMENT
+parser = argparse.ArgumentParser(description="Extract metadata and comments from a TikTok video.")
+parser.add_argument('-u', '--url', type=str, required=True, help="Specify the TikTok video URL.")
+parser.add_argument('-o', '--output', type=str, default='output.txt', help="Define the name of the output file.")
+parser.add_argument('-c', '--comment', type=int, help="Set the number of comments to retrieve.")
+parser.add_argument('-f', '--file-type', type=str, help="Specify the format of the output file: json, csv, or txt.")
+args = parser.parse_args()
+
+
+# LIST ARGUMENT
+URL=args.url
+OUTPUT=args.output
+LEN_COMMENT=args.comment
+FILE_TYPE=args.file_type
+
+METADATA={}
+METADATA['metadata']={}
+METADATA["comments"]=[]
+
+HEADERS = {
+    'Host': 'www.tiktok.com',
+    'Cache-Control': 'max-age=0',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Priority': 'u=0, i'
+}
+
+MATCH=RE.search(r"(\d+)$", URL)
+if MATCH:
+    METADATA['metadata']['idVideo']=MATCH.group(1)
+else:
+    print('  [!] Video ID Not Found ')
+    exit()
+
+FIRST_URL=f"https://www.tiktok.com/@tiktok/video/{METADATA['metadata']['idVideo']}"
+
+FIRST_RESPONSE=REQUEST.get(
+    FIRST_URL,
+    headers=HEADERS,
+    allow_redirects=True,
+    verify=False,
+)
+
+if FIRST_RESPONSE.status_code == 200:
+    HTML_CONTENT=FIRST_RESPONSE.text
+
+    MATCH=RE.search(r'<script\s+id="__UNIVERSAL_DATA_FOR_REHYDRATION__"\s+type="application/json">(.*?)</script>', HTML_CONTENT)
+    if MATCH:
+        JSON_DATA=MATCH.group(1)
+        JSON_DATA= JSON.loads(JSON_DATA)
+    else:
+        print("  [!] 'JSON_DATA' Not Found")
     
-    Returns:
-        A dictionary with detailed sentiment analysis results.
-    """
-    # TextBlob Analysis
-    blob_analysis = TextBlob(comment)
-    polarity = blob_analysis.sentiment.polarity
-    subjectivity = blob_analysis.sentiment.subjectivity
-
-    # VADER Analysis
-    sia = SentimentIntensityAnalyzer()
-    vader_scores = sia.polarity_scores(comment)
-
-    # Determine overall sentiment
-    if polarity > 0 and vader_scores['compound'] > 0.05:
-        overall_sentiment = "Positive"
-    elif polarity < 0 and vader_scores['compound'] < -0.05:
-        overall_sentiment = "Negative"
+    # ===================== idVideo =======================
+    VIDEO_ID=JSON_DATA["__DEFAULT_SCOPE__"]["webapp.video-detail"]["itemInfo"]["itemStruct"]["id"]
+    if VIDEO_ID:
+        METADATA["metadata"]["idVideo"]=VIDEO_ID
     else:
-        overall_sentiment = "Neutral"
+        print('  [!] Video ID Not Found ')
+        exit()
 
-    # Classify sentiment intensity
-    intensity = "Moderate"
-    if abs(vader_scores['compound']) > 0.6:
-        intensity = "Strong"
-    elif abs(vader_scores['compound']) < 0.3:
-        intensity = "Weak"
+    # ==================== uniqueId ==========================
+    GET_UNIQ_ID=JSON_DATA["__DEFAULT_SCOPE__"]["webapp.video-detail"]["itemInfo"]["itemStruct"]["author"]["uniqueId"]
+    if GET_UNIQ_ID:
+        METADATA["metadata"]["uniqueId"]=GET_UNIQ_ID
+    else:
+        print("  [!] 'uniqueId' Not Found")
+        exit()
 
-    return {
-        "overall_sentiment": overall_sentiment,
-        "polarity": polarity,
-        "subjectivity": subjectivity,
-        "vader_scores": vader_scores,
-        "intensity": intensity
-    }
+    # ==================== nickname ==================  ========
+    GET_NICKNAME=JSON_DATA["__DEFAULT_SCOPE__"]["webapp.video-detail"]["itemInfo"]["itemStruct"]["author"]["nickname"]
+    if GET_NICKNAME:
+        METADATA["metadata"]["nickname"]=GET_NICKNAME
+    else:
+        print("  [!] 'nickname' Not Found")
+        exit()
+        
+    # ==================== descVideo ==========================
+    GET_DESC=JSON_DATA["__DEFAULT_SCOPE__"]["webapp.video-detail"]["itemInfo"]["itemStruct"]["desc"]
+    if GET_DESC:
+        METADATA["metadata"]["description"]=GET_DESC
+    else:
+        print("  [!] 'desc' Not Found")
+        exit
 
-# Function to load JSON data
-def load_json(file_path):
+    # ==================== diggCount ==========================
+    GET_LIKE=JSON_DATA["__DEFAULT_SCOPE__"]["webapp.video-detail"]["itemInfo"]["itemStruct"]["stats"]["diggCount"]
+    if GET_LIKE:
+        METADATA["metadata"]["totalLike"]=GET_LIKE
+    else:
+        print("  [!] 'diggCount' Not Found")
+        exit()
+
+    # ==================== commentCount ==========================
+    GET_COMMENT=JSON_DATA["__DEFAULT_SCOPE__"]["webapp.video-detail"]["itemInfo"]["itemStruct"]["stats"]["commentCount"]
+    if GET_COMMENT:
+        METADATA["metadata"]["totalComment"]=GET_COMMENT
+    else:
+        print("  [!] 'commentCount' Not Found")
+        exit()
+    
+    # ==================== shareCount ==========================
+    GET_SHARE=JSON_DATA["__DEFAULT_SCOPE__"]["webapp.video-detail"]["itemInfo"]["itemStruct"]["stats"]["shareCount"]
+    if GET_SHARE:
+        METADATA["metadata"]["totalShare"]=GET_SHARE
+    else:
+        print("  [!] 'shareCount' Not Found")
+        exit()
+    
+    # ==================== createTime ==========================
+    GET_TIME=JSON_DATA["__DEFAULT_SCOPE__"]["webapp.video-detail"]["itemInfo"]["itemStruct"]["createTime"]
+    if GET_TIME:
+        TIME_POST=GET_TIME
+        METADATA["metadata"]["createTime"]=time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(int(TIME_POST)))
+    else:
+        print("  [!] 'createTime' Not Found")
+        exit()
+
+    # ==================== duration ==========================
+    GET_DURATION=JSON_DATA["__DEFAULT_SCOPE__"]["webapp.video-detail"]["itemInfo"]["itemStruct"]["video"]["duration"]
+    if GET_DURATION:
+        DURATION=GET_DURATION
+        METADATA["metadata"]["duration"]=convert(int(DURATION)) 
+    else:
+        print("  [!] 'duration' Not Found")
+        exit()
+
+    # 
+    
+    print('________________________________________________________________________\n')
+    print(f"  :: URL : {URL}\n  :: Total Like : {METADATA['metadata']['totalLike']}\n  :: Total Comments : {METADATA['metadata']['totalComment']}\n  :: Total Share : {METADATA['metadata']['totalShare']}\n  :: Duration : {METADATA['metadata']['duration']}\n  :: Posted at : {METADATA['metadata']['createTime']}")
+    print('________________________________________________________________________\n')
+
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        return data
-    except Exception as e:
-        st.error(f"Error loading JSON file: {e}")
-        return None
+        for CURSOR in range(0, int(METADATA["metadata"]["totalComment"]), 50):
+            API_URL = f'https://www.tiktok.com/api/comment/list/?aid=1988&app_language=en&app_name=tiktok_web&aweme_id={METADATA["metadata"]["idVideo"]}&count=50&cursor={CURSOR}&os=windows&region=ID&screen_height=768&screen_width=1366&user_is_login=false'
+            
+            SEC_RESPONSE=REQUEST.get(API_URL, headers=HEADERS, verify=False)
+            DATA=JSON.loads(SEC_RESPONSE.text)
 
-# Streamlit GUI
-st.title("TikTok Comment Sentiment Analysis")
+            sleep(1)
+            if DATA["has_more"] == 0:
+                break
+            if LEN_COMMENT == len(METADATA["comments"]):
+                break
+            for COUNT in range(0, 55):
+                try:
+                    USERNAME=DATA["comments"][COUNT]["user"]["nickname"]
+                    COMMENT=DATA["comments"][COUNT]["text"]
+                    METADATA["comments"].append({"username":USERNAME, "comment":COMMENT})
+                    print(f"  :: Progress: [{len(METADATA['comments'])}/{METADATA['metadata']['totalComment']}]", end='\r') 
+                    if LEN_COMMENT == len(METADATA["comments"]):
+                        break
+                except IndexError:
+                    pass
+    finally:
+        cwd = os.getcwd()
 
-# Input TikTok video URL
-video_url = st.text_input("Enter TikTok Video URL:")
-st.write("Example : https://www.tiktok.com/username/video/7419678770166009094")
+        if FILE_TYPE == 'json':
+            with open(OUTPUT, 'w', encoding="utf-8") as file:
+                JSON.dump({"metadata": METADATA['metadata'],"comments": METADATA['comments']}, file, ensure_ascii=False, indent=4)
 
-if st.button("Analyze Sentiments"):
-    if not video_url:
-        st.error("Please enter a TikTok video URL.")
-    else:
-        try:
-            output_file = "output.json"
-            file_type = "json"
+        elif FILE_TYPE == 'csv':
+            with open(OUTPUT, 'w', newline='', encoding="utf-8") as file:
+                writer = csv.writer(file)
+                writer.writerow(["username", "comment"])
+                for comment in METADATA['comments']:
+                    writer.writerow([comment["username"], comment["comment"]])
+        
+        elif FILE_TYPE == 'txt':
+            with open(OUTPUT, 'w', encoding="utf-8") as file:
+                for comment in METADATA['comments']:
+                    file.write(f"{comment['username']}: {comment['comment']}\n")
 
-            # Run the TikTok scraper program
-            st.info("Running TikTok scraper...")
-            run_tiktok_scraper(video_url, output_file, file_type)
-            st.success("TikTok scraper completed successfully!")
-
-            # Load JSON data
-            st.info("Loading data from output.json...")
-            data = load_json(output_file)
-            if not data:
-                st.error("Failed to load data from output.json.")
-                os.remove(output_file)
-
-            # Display video metadata
-            st.subheader("Video Metadata")
-            metadata = data["metadata"]
-            st.write(f"**Video ID:** {metadata['idVideo']}")
-            st.write(f"**Username:** {metadata['uniqueId']} ({metadata['nickname']})")
-            st.write(f"**Description:** {metadata['description']}")
-            st.write(f"**Total Likes:** {metadata['totalLike']}")
-            st.write(f"**Total Comments:** {metadata['totalComment']}")
-            st.write(f"**Total Shares:** {metadata['totalShare']}")
-            st.write(f"**Created At:** {metadata['createTime']}")
-            st.write(f"**Duration:** {metadata['duration']} seconds")
-
-            # Perform sentiment analysis
-            st.subheader("Sentiment Analysis Results")
-            comments = data.get("comments", [])
-            sentiment_counts = {"Positive": 0, "Negative": 0, "Neutral": 0}
-
-            for comment_data in comments:
-                comment = comment_data["comment"]
-                sentiment = analyze_sentiment(comment)
-                sentiment_counts[sentiment["overall_sentiment"]] += 1
-
-            # Display sentiment analysis results as a bar chart
-            labels = list(sentiment_counts.keys())
-            values = list(sentiment_counts.values())
-
-            fig, ax = plt.subplots()
-            ax.bar(labels, values, color=["green", "red", "gray"])
-            ax.set_title("Sentiment Analysis of Comments")
-            ax.set_ylabel("Number of Comments")
-            ax.set_xlabel("Sentiment")
-            st.pyplot(fig)
-
-            # Cleanup
-            os.remove(output_file)
-        except Exception as e:
-            st.error(f"An error occurred: {e}")
+        print(fr"  [+] Result | Saved in {cwd}\{OUTPUT}                                      ", end="\r")
+        print(f'\n\n     | Total Comments : {METADATA["metadata"]["totalComment"]}\n',
+        f'    | Received Comments : {len(METADATA["comments"])}\n')
+else:
+    print(f"Gagal mengambil halaman, Status Code: {FIRST_RESPONSE.status_code}")
