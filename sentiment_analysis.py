@@ -87,74 +87,76 @@ st.title("TikTok Comment Sentiment Analysis")
 st.write("Enter A Tiktok Video :")
 st.write("Copy it from url on Search bar...")
 video_url = st.text_input("Example : https://www.tiktok.com/username/video/7452354083213775")
-if st.button("Analyze Sentiments"):
-    if not video_url:
-        st.error("Please enter a TikTok video URL.")
-    else:
-        try:
-            output_file = "output.json"
-
-            # Run the TikTok scraper
-            col11, col12, col13, col14= st.columns(4)
-            with col11:
-                st.info("Running TikTok scraper...")
-                scraper = TikTokExtractor(url=video_url, output=output_file, file_type='json')
-                scraper.run()
-            with col12:
-                st.success("TikTok scraper completed successfully!")
-            # Load JSON data
-            with col13:
-                st.info("Loading data from json...")
-            with open(output_file, "r", encoding="utf-8") as f:
-                data = json.load(f)
-
-            
-            col1, col2 ,col3= st.columns(3)
-            with col1:
-                # Display video metadata
-                st.subheader("Video Metadata")
-                metadata = data["metadata"]
-                st.write(f"**Video ID:** {metadata['idVideo']}")
-                st.write(f"**Username:** {metadata['uniqueId']} ({metadata['nickname']})")
-                st.write(f"**Description:** {metadata['description']}")
-                st.write(f"**Total Likes:** {metadata['totalLike']}")
-                st.write(f"**Total Comments:** {metadata['totalComment']}")
-                st.write(f"**Total Shares:** {metadata['totalShare']}")
-                st.write(f"**Created At:** {metadata['createTime']}")
-                st.write(f"**Duration:** {metadata['duration']} seconds")
-            with col2:
-                #separator
-                st.subheader(" ")
-                st.write("->")
-            with col3:
-                # Perform sentiment analysis
-                st.subheader("Sentiment Analysis Results")
-                comments = data.get("comments", [])
-                sentiment_counts = {"Positive": 0, "Negative": 0, "Neutral": 0}
-
+col11, col12, col13, col14= st.columns(4)
+with col11:
+    if st.button("Analyze Sentiments"):
+        if not video_url:
+            st.error("Please enter a TikTok video URL please input like example.")
+        else:
+            try:
+                output_file = "output.json"
+    
+                # Run the TikTok scraper
+                
+                with col12:
+                    st.info("Running TikTok scraper...")
+                    scraper = TikTokExtractor(url=video_url, output=output_file, file_type='json')
+                    scraper.run()
+                with col13:
+                    st.success("TikTok scraper completed successfully!")
+                # Load JSON data
+                with col14:
+                    st.info("Loading data from json...")
+                with open(output_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+    
+                
+                col1, col2 ,col3= st.columns(3)
+                with col1:
+                    # Display video metadata
+                    st.subheader("Video Metadata")
+                    metadata = data["metadata"]
+                    st.write(f"**Video ID:** {metadata['idVideo']}")
+                    st.write(f"**Username:** {metadata['uniqueId']} ({metadata['nickname']})")
+                    st.write(f"**Description:** {metadata['description']}")
+                    st.write(f"**Total Likes:** {metadata['totalLike']}")
+                    st.write(f"**Total Comments:** {metadata['totalComment']}")
+                    st.write(f"**Total Shares:** {metadata['totalShare']}")
+                    st.write(f"**Created At:** {metadata['createTime']}")
+                    st.write(f"**Duration:** {metadata['duration']} seconds")
+                with col2:
+                    #separator
+                    st.subheader(" ")
+                    st.write("->")
+                with col3:
+                    # Perform sentiment analysis
+                    st.subheader("Sentiment Analysis Results")
+                    comments = data.get("comments", [])
+                    sentiment_counts = {"Positive": 0, "Negative": 0, "Neutral": 0}
+    
+                    for comment_data in comments:
+                        comment = comment_data["comment"]
+                        sentiment = analyze_sentiment(comment)
+                        sentiment_counts[sentiment["overall_sentiment"]] += 1
+    
+                    # Display sentiment analysis results as a bar chart
+                    labels = list(sentiment_counts.keys())
+                    values = list(sentiment_counts.values())
+    
+                    fig, ax = plt.subplots()
+                    ax.bar(labels, values, color=["green", "red", "gray"])
+                    ax.set_title("Sentiment Analysis of Comments")
+                    ax.set_ylabel("Number of Comments")
+                    ax.set_xlabel("Sentiment")
+                    st.pyplot(fig)
+                    
+                #display comments result from scrapper
                 for comment_data in comments:
                     comment = comment_data["comment"]
-                    sentiment = analyze_sentiment(comment)
-                    sentiment_counts[sentiment["overall_sentiment"]] += 1
-
-                # Display sentiment analysis results as a bar chart
-                labels = list(sentiment_counts.keys())
-                values = list(sentiment_counts.values())
-
-                fig, ax = plt.subplots()
-                ax.bar(labels, values, color=["green", "red", "gray"])
-                ax.set_title("Sentiment Analysis of Comments")
-                ax.set_ylabel("Number of Comments")
-                ax.set_xlabel("Sentiment")
-                st.pyplot(fig)
-                
-            #display comments result from scrapper
-            for comment_data in comments:
-                comment = comment_data["comment"]
-                # Display each comment with username and sentiment analysis
-                st.write({"username": comment_data["username"], "comment": comment})
-            # Cleanup
-            os.remove(output_file)
+                    # Display each comment with username and sentiment analysis
+                    st.write({"username": comment_data["username"], "comment": comment})
+                # Cleanup
+                os.remove(output_file)
 
         except Exception as e:
             st.error(f"An error occurred: {e}")
