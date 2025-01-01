@@ -10,17 +10,6 @@ import re as RE
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# ASCII Art
-print(r'''
-  __  __         __                       
- / /_/ /________/ /_ ____ _  ___  ___ ____
-/ __/ __/___/ _  / // /  ' \/ _ \/ -_) __/
-\__/\__/    \_,_/\_,_/_/_/_/ .__/\__/_/   
-                          /_/             
-                        
-                         @bud1mu
-''')
-
 def convert(n):
     return str(datetime.timedelta(seconds = n))
 
