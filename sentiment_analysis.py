@@ -13,10 +13,13 @@ from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from scrapper import TikTokExtractor
 
-# Unduh resource NLTK yang diperlukan
+# Download NLTK resource
 nltk.download('punkt')
 nltk.download('stopwords')
 nltk.download('vader_lexicon')
+
+#set page
+st.set_page_config(page_title="TikTok Comment Sentiment Analysis", layout="wide", page_icon="favicon.ico")
 
 # Function to detect language and preprocess comment
 def preprocess_comment_with_language_detection(comment):
@@ -79,7 +82,7 @@ def analyze_sentiment(comment):
 
 # Streamlit GUI
 st.title("TikTok Comment Sentiment Analysis")
-st.set_page_config(page_title="TikTok Comment Sentiment Analysis", layout="wide", page_icon="favicon.ico")
+
 # Input TikTok video URL
 st.write("Enter A Tiktok Video :")
 st.write("Copy it from url on Search bar...")
