@@ -144,7 +144,6 @@ if st.button("Analyze Sentiments"):
                 ax.set_ylabel("Number of Comments")
                 ax.set_xlabel("Sentiment")
                 st.pyplot(fig)
-                return comments
                 
             #display comments result from scrapper
             for comment_data in comments:
