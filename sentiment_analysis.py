@@ -11,31 +11,12 @@ from langdetect import detect
 import re
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
+from scrapper import TikTokExtractor
 
 # Unduh resource NLTK yang diperlukan
 nltk.download('punkt')
 nltk.download('stopwords')
 nltk.download('vader_lexicon')
-
-# Function to load JSON data
-def load_json(file_path):
-    try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        return data
-    except Exception as e:
-        st.error(f"Error loading JSON file: {e}")
-        return None
-
-# Function to run the TikTok scraper program
-def run_tiktok_scraper(url, output_file, file_type="json"):
-    """
-    Run the TikTok scraper and save the output to a specified file.
-    """
-    command = f"python scrapper.py -u {url} -o {output_file} -f {file_type}"
-    process = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if process.returncode != 0:
-        raise Exception(f"Error running scraper: {process.stderr.decode('utf-8')}")
 
 # Function to detect language and preprocess comment
 def preprocess_comment_with_language_detection(comment):
@@ -100,27 +81,26 @@ def analyze_sentiment(comment):
 st.title("TikTok Comment Sentiment Analysis")
 
 # Input TikTok video URL
-video_url = st.text_input("Enter TikTok Video URL:            Example : https://www.tiktok.com/username/video/7452354083213775")
-
+video_url = st.text_input("Enter TikTok Video URL: ")
+st.write("Example : https://www.tiktok.com/username/video/7452354083213775")
+st.write("Copy it from url on Search bar...")
 if st.button("Analyze Sentiments"):
     if not video_url:
         st.error("Please enter a TikTok video URL.")
     else:
         try:
             output_file = "output.json"
-            file_type = "json"
 
-            # Run the TikTok scraper program
+            # Run the TikTok scraper
             st.info("Running TikTok scraper...")
-            run_tiktok_scraper(video_url, output_file, file_type)
+            scraper = TikTokExtractor(url=video_url, output=output_file, file_type='json')
+            scraper.run()
             st.success("TikTok scraper completed successfully!")
 
             # Load JSON data
             st.info("Loading data from json...")
-            data = load_json(output_file)
-            if not data:
-                st.error("Failed to load data from output.json.")
-                os.remove(output_file)
+            with open(output_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
 
             # Display video metadata
             st.subheader("Video Metadata")
@@ -156,7 +136,7 @@ if st.button("Analyze Sentiments"):
             st.pyplot(fig)
 
             # Cleanup
-            os.remove(output_file)  # Uncomment if you want to delete the file after use
+            os.remove(output_file)
 
         except Exception as e:
             st.error(f"An error occurred: {e}")
