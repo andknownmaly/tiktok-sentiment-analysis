@@ -158,5 +158,5 @@ with col11:
                 # Cleanup
                 os.remove(output_file)
 
-        except Exception as e:
-            st.error(f"An error occurred: {e}")
+            except Exception as e:
+                st.error(f"An error occurred: {e}")
