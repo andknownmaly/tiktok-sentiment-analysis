@@ -19,7 +19,7 @@ nltk.download('stopwords')
 nltk.download('vader_lexicon')
 
 #set page
-st.set_page_config(page_title="TikTok Comment Sentiment Analysis", layout="wide", page_icon="favicon.ico")
+st.set_page_config(page_title="TikTok Comment Sentiment Analysis", layout="wide", page_icon="analysis.ico")
 
 # Function to detect language and preprocess comment
 def preprocess_comment_with_language_detection(comment):
