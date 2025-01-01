@@ -95,13 +95,16 @@ if st.button("Analyze Sentiments"):
             output_file = "output.json"
 
             # Run the TikTok scraper
-            st.info("Running TikTok scraper...")
-            scraper = TikTokExtractor(url=video_url, output=output_file, file_type='json')
-            scraper.run()
-            st.success("TikTok scraper completed successfully!")
-
+            col11, col12, col13, col14= st.columns(4)
+            with col11:
+                st.info("Running TikTok scraper...")
+                scraper = TikTokExtractor(url=video_url, output=output_file, file_type='json')
+                scraper.run()
+            with col12:
+                st.success("TikTok scraper completed successfully!")
             # Load JSON data
-            st.info("Loading data from json...")
+            with col13:
+                st.info("Loading data from json...")
             with open(output_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
 
