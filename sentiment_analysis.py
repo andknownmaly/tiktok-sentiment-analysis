@@ -150,7 +150,7 @@ if st.button("Analyze Sentiments"):
             for comment_data in comments:
                 comment = comment_data["comment"]
                 # Display each comment with username and sentiment analysis
-                st.write({"username": comment_data["username"], "comment": comment]})
+                st.write({"username": comment_data["username"], "comment": comment})
             # Cleanup
             os.remove(output_file)
 
