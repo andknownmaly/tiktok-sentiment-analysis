@@ -138,8 +138,8 @@ if analyze_button:
 
                 for comment_data in comments:
                     comment = comment_data["comment"]
-                    preprocess_comment_with_language_detection(comment)
-                    sentiment = analyze_sentiment(filtered_tokens)
+                    pre = preprocess_comment_with_language_detection(comment)
+                    sentiment = analyze_sentiment(pre)
                     sentiment_counts[sentiment["overall_sentiment"]] += 1
 
                 # Display sentiment analysis results as a bar chart
