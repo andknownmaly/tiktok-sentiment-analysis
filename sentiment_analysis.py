@@ -14,6 +14,7 @@ from scrapper import TikTokExtractor
 
 # Download NLTK resources
 nltk.download('punkt')
+nltk.download('punkt_tab')
 nltk.download('stopwords')
 nltk.download('vader_lexicon')
 
