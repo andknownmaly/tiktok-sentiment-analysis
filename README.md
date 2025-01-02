@@ -24,9 +24,9 @@ A Python application that performs sentiment analysis on TikTok video comments, 
 - Subject to TikTok's API limitations
 - English-focused sentiment analysis (falls back to English for other languages)
 
-## License
+<!--## License
 
-MIT License
+MIT License-->
 
 ## Disclaimer
 
