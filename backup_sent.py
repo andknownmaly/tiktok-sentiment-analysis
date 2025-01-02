@@ -11,31 +11,16 @@ from langdetect import detect
 import re
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
+from scrapper import TikTokExtractor
 
-# Unduh resource NLTK yang diperlukan
+# Download NLTK resource
 nltk.download('punkt')
+nltk.download('punkt_tab')
 nltk.download('stopwords')
 nltk.download('vader_lexicon')
 
-# Function to load JSON data
-def load_json(file_path):
-    try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        return data
-    except Exception as e:
-        st.error(f"Error loading JSON file: {e}")
-        return None
-
-# Function to run the TikTok scraper program
-def run_tiktok_scraper(url, output_file, file_type="json"):
-    """
-    Run the TikTok scraper and save the output to a specified file.
-    """
-    command = f"python scrapper.py -u {url} -o {output_file} -f {file_type}"
-    process = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if process.returncode != 0:
-        raise Exception(f"Error running scraper: {process.stderr.decode('utf-8')}")
+#set page
+st.set_page_config(page_title="TikTok Comment Sentiment Analysis", layout="wide", page_icon="analysis.ico")
 
 # Function to detect language and preprocess comment
 def preprocess_comment_with_language_detection(comment):
@@ -100,63 +85,82 @@ def analyze_sentiment(comment):
 st.title("TikTok Comment Sentiment Analysis")
 
 # Input TikTok video URL
-video_url = st.text_input("Enter TikTok Video URL:            Example : https://www.tiktok.com/username/video/7452354083213775")
-
-if st.button("Analyze Sentiments"):
+st.write("Enter A Tiktok Video :")
+st.write("Copy it from url on Search bar...")
+video_url = st.text_input("Example : https://www.tiktok.com/username/video/7452354083213775")
+col11, col12, col13, col14= st.columns(4)
+with col11:
+    analyze_button = st.button("Analyze Sentiments")
+if analyze_button:
     if not video_url:
-        st.error("Please enter a TikTok video URL.")
+        st.error("Please enter a TikTok video URL please input like example.")
     else:
         try:
             output_file = "output.json"
-            file_type = "json"
 
-            # Run the TikTok scraper program
-            st.info("Running TikTok scraper...")
-            run_tiktok_scraper(video_url, output_file, file_type)
-            st.success("TikTok scraper completed successfully!")
-
+            # Run the TikTok scraper
+            
+            with col12:
+                st.info("Running TikTok scraper...")
+                scraper = TikTokExtractor(url=video_url, output=output_file, file_type='json')
+                scraper.run()
+            with col13:
+                st.success("TikTok scraper completed successfully!")
             # Load JSON data
-            st.info("Loading data from json...")
-            data = load_json(output_file)
-            if not data:
-                st.error("Failed to load data from output.json.")
-                os.remove(output_file)
+            with col14:
+                st.info("Loading data from json...")
+            with open(output_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
 
-            # Display video metadata
-            st.subheader("Video Metadata")
-            metadata = data["metadata"]
-            st.write(f"**Video ID:** {metadata['idVideo']}")
-            st.write(f"**Username:** {metadata['uniqueId']} ({metadata['nickname']})")
-            st.write(f"**Description:** {metadata['description']}")
-            st.write(f"**Total Likes:** {metadata['totalLike']}")
-            st.write(f"**Total Comments:** {metadata['totalComment']}")
-            st.write(f"**Total Shares:** {metadata['totalShare']}")
-            st.write(f"**Created At:** {metadata['createTime']}")
-            st.write(f"**Duration:** {metadata['duration']} seconds")
+            
+            col1, col2 ,col3= st.columns(3)
+            with col1:
+                # Display video metadata
+                st.subheader("Video Metadata")
+                metadata = data["metadata"]
+                st.write(f"**Video ID:** {metadata['idVideo']}")
+                st.write(f"**Username:** {metadata['uniqueId']} ({metadata['nickname']})")
+                st.write(f"**Description:** {metadata['description']}")
+                st.write(f"**Total Likes:** {metadata['totalLike']}")
+                st.write(f"**Total Comments:** {metadata['totalComment']}")
+                st.write(f"**Total Shares:** {metadata['totalShare']}")
+                st.write(f"**Created At:** {metadata['createTime']}")
+                st.write(f"**Duration:** {metadata['duration']} seconds")
+            with col2:
+                #separator
+                st.subheader(" ")
+                st.write("->")
+            with col3:
+                # Perform sentiment analysis
+                st.subheader("Sentiment Analysis Results")
+                comments = data.get("comments", [])
+                sentiment_counts = {"Positive": 0, "Negative": 0, "Neutral": 0}
 
-            # Perform sentiment analysis
-            st.subheader("Sentiment Analysis Results")
-            comments = data.get("comments", [])
-            sentiment_counts = {"Positive": 0, "Negative": 0, "Neutral": 0}
+                for comment_data in comments:
+                    comment = comment_data["comment"]
+                    pre = preprocess_comment_with_language_detection(comment)
+                    #st.write(pre)
+                    sentiment = analyze_sentiment(comment)# " ".join(pre) #harusnya di isi variable pre
+                    sentiment_counts[sentiment["overall_sentiment"]] += 1
 
+                # Display sentiment analysis results as a bar chart
+                labels = list(sentiment_counts.keys())
+                values = list(sentiment_counts.values())
+
+                fig, ax = plt.subplots()
+                ax.bar(labels, values, color=["green", "red", "gray"])
+                ax.set_title("Sentiment Analysis of Comments")
+                ax.set_ylabel("Number of Comments")
+                ax.set_xlabel("Sentiment")
+                st.pyplot(fig)
+                
+            #display comments result from scrapper
             for comment_data in comments:
                 comment = comment_data["comment"]
-                sentiment = analyze_sentiment(comment)
-                sentiment_counts[sentiment["overall_sentiment"]] += 1
-
-            # Display sentiment analysis results as a bar chart
-            labels = list(sentiment_counts.keys())
-            values = list(sentiment_counts.values())
-
-            fig, ax = plt.subplots()
-            ax.bar(labels, values, color=["green", "red", "gray"])
-            ax.set_title("Sentiment Analysis of Comments")
-            ax.set_ylabel("Number of Comments")
-            ax.set_xlabel("Sentiment")
-            st.pyplot(fig)
-
+                # Display each comment with username and sentiment analysis
+                st.write({"username": comment_data["username"], "comment": comment})
             # Cleanup
-            os.remove(output_file)  # Uncomment if you want to delete the file after use
+            os.remove(output_file)
 
         except Exception as e:
             st.error(f"An error occurred: {e}")
