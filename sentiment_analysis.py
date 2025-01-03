@@ -140,9 +140,9 @@ class TikTokSentimentAnalyzer:
                     for comment_data in comments:
                         comment = comment_data["comment"]
                         username = comment_data.get("username", "Anonymous")
-                        pre = self.preprocess_comment_with_language_detection(comment)
-                        processed_comment = " ".join(pre)
-                        sentiment = self.analyze_sentiment(processed_comment)
+                        #pre = self.preprocess_comment_with_language_detection(comment)
+                        #processed_comment = " ".join(pre)
+                        #sentiment = self.analyze_sentiment(processed_comment)
 
                         st.write({
                             "username": username,
