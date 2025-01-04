@@ -66,8 +66,7 @@ class TikTokSentimentAnalyzer:
         }
 
     def run(self):
-        #st.title("TikTok Comment Sentiment Analysis")
-        st.title("Yesterday is My Birthday")
+        st.title("TikTok Comment Sentiment Analysis")
         st.write("Enter A TikTok Video:")
         st.write("Copy it from the URL on the search bar...")
         video_url = st.text_input("Example: https://www.tiktok.com/username/video/7452354083213775")
